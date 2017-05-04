@@ -124,12 +124,9 @@ def main():
     chars, labels = dic.words2chars(words)
     cids = dic.chars2cids(chars)
     
-    #print(chars)
-    #print(dic.chars2cids(chars))
-    #print(dic.cids2chars(cids))
-    
-    #words2 = dic.chars2words(chars, labels)
-    #print(words2)
+    print(chars)
+    print(dic.chars2cids(chars))
+    print(dic.cids2chars(cids))
 
 if __name__ == '__main__':
     main()
