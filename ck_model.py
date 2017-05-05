@@ -1,3 +1,4 @@
+import logging
 import numpy as np
 import tensorflow as tf
 import tensorflow.contrib.layers as layers
@@ -9,7 +10,7 @@ class CkModel:
         cutkum model: LSTM recurrent neural network model
     '''
     def __init__(self, model_settings):
-        print('...init WordSegmentor')
+        logging.info('...init WordSegmentor')
                 
         self.lstm_size  = model_settings["lstm_size"]
         self.num_unroll = model_settings["num_unroll"]
@@ -19,7 +20,7 @@ class CkModel:
         self.learning_rate = model_settings['learning_rate']
             
     def _create_placeholders(self):
-        print('...create placeholder')
+        logging.info('...create placeholder')
         # (time, batch, in)        
         self.inputs  = tf.placeholder(tf.float32, (None, None, self.input_classes)) 
         # (time, batch, out)
@@ -27,7 +28,7 @@ class CkModel:
         self.init_state = tf.placeholder(tf.float32, [self.num_layers, 2, None, self.lstm_size])
     
     def _inference(self):
-        print('...create inference')
+        logging.info('...create inference')
         
         init_state_list = tf.unpack(self.init_state, axis=0)
         init_state_tuple = tuple(
@@ -55,7 +56,7 @@ class CkModel:
         self.states = rnn_states
     
     def _create_loss(self):
-        print('...create loss')
+        logging.info('...create loss')
 
         # shape=[Time * Batch, label_classes]   
         outputs_flat = tf.reshape(self.outputs, [-1, self.label_classes])
@@ -75,7 +76,7 @@ class CkModel:
         self.mean_loss = tf.reduce_sum(masked_losses) / self.num_entries        
         
     def _create_optimizer(self):
-        print('...create optimizer')
+        logging.info('...create optimizer')
         self.optimizer = tf.train.AdamOptimizer(self.learning_rate).minimize(self.mean_loss)
     
     def build_graph(self):
