@@ -4,7 +4,7 @@
 # License: MIT
 # 2017-05-01
 #
-# A recurrent neural network model (LSTM) for thai word segmentation
+# A command-line function to load a trained model and compute the word segmentation
 
 import math
 from os import listdir
