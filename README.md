@@ -1,9 +1,9 @@
 # cutkum
-a deep learning approach to thai word-segmentation
+Thai Word-Segmentation with Deep Learning in Tensorflow
 
 # requirements
-python 3.0 \\
-tensorflow 1.0 \\
+python 3.0
+tensorflow 1.0
 
 # Citations
 
@@ -12,7 +12,7 @@ The following is a [BibTeX](http://www.bibtex.org/) and plaintext reference.
 The BibTeX entry requires the `url` LaTeX package.
 
 ```
-@misc{amos2016image,
+@misc{treeratpituk017cutkum	,
     title        = {{Thai Word-Segmentation with Deep Learning in Tensorflow}},
     author       = {Treeratpituk, Pucktada},
     howpublished = {\url{https://github.com/pucktada/cutkum}},
