@@ -1,16 +1,13 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python3
 
 import math
 from os import listdir
 from os.path import isfile, isdir, join
 import sys
+import configargparse
 import logging
-
 import tensorflow as tf
 import numpy as np
-
-import configargparse
-
 from char_dictionary import CharDictionary
 from ck_model import CkModel
 
@@ -46,122 +43,101 @@ def viterbi(prob_matrix):
     
     return seq
 
-def process_sentence(sess, model, one_hot_by_t):
-    num_rolls = math.ceil(one_hot_by_t.shape[0] / model.num_unroll)
-
-    probs  = np.zeros(shape=[0, 1, model.label_classes])
-    states = np.zeros((model.num_layers, 2, 1, model.lstm_size))
+def process_sentence(sess, model_settings, model_vars, one_hot_by_t):
     
-    for i in range(num_rolls):
-        start_t = i * model.num_unroll 
-        end_t   = min((i + 1) * model.num_unroll, one_hot_by_t.shape[0])
-        
-        feed = { model.inputs:  one_hot_by_t[start_t:end_t,:,:],
-                 model.init_state: states }
-        _p, _s = sess.run([model.probs, model.states], feed_dict=feed)
-        states = _s
-        probs  = np.concatenate((probs, _p), axis=0)
-
-    return np.squeeze(probs) 
-
-def process_input_sentence(graph, char_dict, model, model_file, sentence):
-    # start a session...
-    with tf.Session(graph=graph) as sess:
-
-        saver = tf.train.Saver()
-        if isfile(model_file + '.meta'):
-            print('loading model:', model_file)
-            saver.restore(sess, model_file)
-        
-        chars = list(sentence.strip())
-        cids = char_dict.chars2cids(chars)
-        
-        in_embedding = np.eye(model.input_classes)
-        one_hot      = in_embedding[cids]
-        one_hot_by_t = np.expand_dims(one_hot, 1)
-
-        probs = process_sentence(sess, model, one_hot_by_t)
-        labels = viterbi(probs)
-        words   = char_dict.chars2words(chars, labels)
-        print('|'.join(words))
-
-def process_input_file(graph, char_dict, model, model_file, input_file):
-    # start a session...
-    with tf.Session(graph=graph) as sess:
-
-        saver = tf.train.Saver()
-        if isfile(model_file + '.meta'):
-            logging.info('loading model: %s', model_file)
-            saver.restore(sess, model_file)
-        
-        with open(input_file, 'r') as f:
-            for s in f: # s is the line string
-                if s and (len(s) > 0):
-                    chars = list(s.strip())
-                    cids = char_dict.chars2cids(chars)
-                    
-                    in_embedding = np.eye(model.input_classes)
-                    one_hot      = in_embedding[cids]
-                    one_hot_by_t = np.expand_dims(one_hot, 1)
-
-                    probs = process_sentence(sess, model, one_hot_by_t)
-                    labels = viterbi(probs)
-                    words   = char_dict.chars2words(chars, labels)
-                    print('|'.join(words))
-
-def build_ckmodel(model_settings):
-    char_dict = CharDictionary()
-    model_settings['input_classes'] = char_dict.num_char_classes() + 1
-    model_settings['label_classes'] = char_dict.num_label_classes() + 1
+    states = np.zeros((model_settings['num_layers'], 2, 1, model_settings['lstm_size']))
     
-    # build a model graph...
-    graph = tf.Graph()
-    with graph.as_default():
-        model = CkModel(model_settings)
-        model.build_graph()
-    return (graph, char_dict, model)
+    feed = { model_vars['inputs']:  one_hot_by_t, model_vars['init_state']: states }
+    probs = sess.run([model_vars['probs']], feed_dict=feed)
+
+    return np.squeeze(probs)
+
+def process_input_sentence(sess, char_dict, model_settings, model_vars, sentence):
+            
+    chars = list(sentence.strip())
+    cids = char_dict.chars2cids(chars)
+    
+    in_embedding = np.eye(model_settings['input_classes'])
+    one_hot      = in_embedding[cids]
+    one_hot_by_t = np.expand_dims(one_hot, 1)
+
+    probs = process_sentence(sess, model_settings, model_vars, one_hot_by_t)
+    labels = viterbi(probs)
+    words   = char_dict.chars2words(chars, labels)
+    print('|'.join(words))
+
+def process_input_file(sess, char_dict, model_settings, model_vars, input_file):
+        
+    with open(input_file, 'r') as f:
+        for s in f: # s is the line string
+            if s and (len(s) > 0):
+                chars = list(s.strip())
+                cids = char_dict.chars2cids(chars)
                 
+                in_embedding = np.eye(model_settings['input_classes'])
+                one_hot      = in_embedding[cids]
+                one_hot_by_t = np.expand_dims(one_hot, 1)
+
+                # run session to retriev prob
+                probs = process_sentence(sess, model_settings, model_vars, one_hot_by_t)                
+                labels = viterbi(probs)
+                words   = char_dict.chars2words(chars, labels)
+                print('|'.join(words))
+
+def load_model(sess, meta_file, checkpoint_file):
+
+    saver = tf.train.import_meta_graph(meta_file)
+    saver.restore(sess, checkpoint_file)
+    
+    configs = tf.get_collection('configs')
+    pvars   = tf.get_collection('placeholders')
+    
+    model_settings = dict()
+    for c in configs:
+        name = c.name.split(':')[0]
+        model_settings[name] = sess.run(c)
+        
+    model_vars = dict()
+    for p in pvars:
+        name = p.name.split(':')[0]
+        model_vars[name] = p
+    model_vars['probs'] = tf.get_collection('probs')[0]
+    
+    return model_settings, model_vars
+    
 if __name__ == '__main__':
     
     p = configargparse.getArgParser()
-    p.add('-c', '--config', required=True, is_config_file=True, help='config file path')
     p.add('-v', '--verbose', help='verbose', action='store_true')
-    p.add('-m', '--model_file',  required=True, help='model file')
-    p.add('--lstm_size',  required=True, help='number of lstm states', type=int)
-    p.add('--num_layers', required=True, help='number of layers', type=int)
-    p.add('--num_unroll', required=True, help='number of unroll for rnn', type=int)
-    p.add('--learning_rate', required=True, help='initial learning rate', type=float)
+    p.add('-c', '--checkpoint_file', required=True, help='checkpoint file')
+    p.add('-m', '--meta_file', required=True, help='meta file')    
     group = p.add_mutually_exclusive_group(required=True)
     group.add('-i', '--input_file', help='input file')
     group.add('-s', '--sentence', help='sentence to parse')
 
     opts = vars(p.parse_known_args()[0])
 
-    verbose = opts['verbose']    
-    # MODEL ARGS
-    model_settings = dict()
-    model_settings['num_unroll'] = opts['num_unroll']
-    model_settings['num_layers'] = opts['num_layers']
-    model_settings['lstm_size']  = opts['lstm_size']
-    model_settings['learning_rate'] = opts['learning_rate'] #Initial learning rate
-    
-    # OTHERS ARGS
-    model_file = opts['model_file']
-    input_file = opts['input_file']
-    input_sentence = opts['sentence']
-    
+    verbose = opts['verbose']
     if (verbose):
         log_level = logging.INFO
     else:
         log_level = logging.WARNING    
     logging.basicConfig(format='%(levelname)s:%(message)s', level=log_level)
-    logging.info('settings: %s', model_settings)
-    logging.info('model_file: %s', model_file)
+          
+    # OTHERS ARGS
+    checkpoint_file = opts['checkpoint_file']
+    meta_file       = opts['meta_file']
 
-    graph, char_dict, model = build_ckmodel(model_settings)
-    if input_file is not None:
-        process_input_file(graph, char_dict, model, model_file, input_file)        
-    elif input_sentence is not None:
-        process_input_sentence(graph, char_dict, model, model_file, input_sentence)
+    input_file      = opts['input_file']
+    input_sentence  = opts['sentence']    
+
+    with tf.Session() as sess:
+        char_dict = CharDictionary()
+        model_settings, model_vars = load_model(sess, meta_file, checkpoint_file)
+        
+        if input_file is not None:
+            process_input_file(sess, char_dict, model_settings, model_vars, input_file)        
+        elif input_sentence is not None:
+            process_input_sentence(sess, char_dict, model_settings, model_vars, input_sentence)
 
       
