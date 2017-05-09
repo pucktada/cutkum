@@ -127,8 +127,8 @@ if __name__ == '__main__':
     
     p = configargparse.getArgParser()
     p.add('-v', '--verbose', help='verbose', action='store_true')
-    p.add('-c', '--checkpoint_file', required=True, help='checkpoint file')
     p.add('-m', '--meta_file', required=True, help='meta file')    
+    p.add('-c', '--checkpoint_file', required=True, help='checkpoint file')
     group = p.add_mutually_exclusive_group(required=True)
     group.add('-i', '--input_file', help='input file')
     group.add('-s', '--sentence', help='sentence to parse')

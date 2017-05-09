@@ -5,21 +5,25 @@ Cutkum is trained on BEST2010 Thai words corpus by NECTEC (https://www.nectec.or
 
 # Requirements
 * python >= 3.0
-* tensorflow 1.1
+* tensorflow >= 1.1
 
 # Usages
 ```
-usage: cutkum.py [-h] [-v] -c CHECKPOINT_FILE -m META_FILE (-i INPUT_FILE | -s SENTENCE)
+usage: cutkum.py [-h] [-v] -m META_FILE -c CHECKPOINT_FILE (-i INPUT_FILE | -s SENTENCE)
+```
+
+`cutkum.py` needs two files to load the trained model, a meta_file (the network definition) and a checkpoint_file (the trained weights). `cutkum.py` can be used in two ways, to segment text directly from a given sentence (with -s) or to segment text within a file (with -i)
+
+For example, one can run `cutkum.py` to segment a thai phrase `สารานุกรมไทยสำหรับเยาวชนฯ` by running
 
 ```
-To run 'Cutkum' takes two model input files, a meta file (-m) and a checkpoint file (-c). 
+./cutkum.py -m model/ck.r8.s128.l3.meta -c model/ck.r8.s128.l3 -s "สารานุกรมไทยสำหรับเยาวชนฯ"
+```
+
+which will produce the resulting word segmentation as followed (words are seperated by '|').
 
 ```
-./cutkum.py -m model/ck.r8.s128.l3.meta -c model/ck.r8.s128.l3 -s "สารานุกรมไทยสำหรับเยาวชนฯ เล่มที 12 นี้ ได้พิมพ์ขึ้นครั้งแรกในพ.ศ.2432 มี 10 เรื่อง คือการบูรณะวัดพระศรีรัตนศาสดาราม"
-```
-which will produce the output word segmentation as followed
-```
-สารานุกรม|ไทย|สำหรับ|เยาวชน|ฯ| |เล่ม|ที |12| |นี้| |ได้|พิมพ์|ขึ้น|ครั้ง|แรก|ใน|พ.ศ.|2432| |มี| |10| |เรื่อง| |คือ|การ|บูรณะ|วัดพระศรีรัตนศาสดาราม
+สารานุกรม|ไทย|สำหรับ|เยาวชน|ฯ
 ```
 
 # Citations
@@ -43,4 +47,9 @@ Accessed: [Insert date here]
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
+
+## To Do
+
+* Improve performance
+* Providing a script for training a new model
 
