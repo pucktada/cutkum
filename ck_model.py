@@ -1,3 +1,11 @@
+#!/usr/bin/env python3
+#
+# Pucktada Treeratpituk (https://github.com/pucktada)
+# License: MIT
+# 2017-05-01
+#
+# A recurrent neural network model (LSTM) for thai word segmentation
+
 import logging
 import numpy as np
 import tensorflow as tf
@@ -6,9 +14,8 @@ import tensorflow.contrib.layers as layers
 from char_dictionary import CharDictionary
 
 class CkModel:
-    '''
-        cutkum model: LSTM recurrent neural network model
-    '''
+    """ utkum model: LSTM recurrent neural network model """
+    
     def __init__(self, model_settings):
         logging.info('...init WordSegmentor')
                 
@@ -105,7 +112,7 @@ if __name__ == '__main__':
     
     # MODEL
     model_settings = dict()
-    model_settings["l2_regularisation"] = 0.0 # According to Karpathy, this is often not needed
+    #model_settings["l2_regularisation"] = 0.0 # not usring right now
     model_settings['num_unroll'] = 12
     model_settings['num_layers'] = 3
     model_settings['lstm_size'] = 64

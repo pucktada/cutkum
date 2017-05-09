@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+#
+# Pucktada Treeratpituk (https://github.com/pucktada)
+# License: MIT
+# 2017-05-01
+#
+# A recurrent neural network model (LSTM) for thai word segmentation
 
 import math
 from os import listdir
@@ -13,8 +19,13 @@ from ck_model import CkModel
 
 # shape(prob_matrix) = [#times, #classes]
 def viterbi(prob_matrix):
+    """ find the most likely sequence of labels using the viterbi algorithm on prob_matrix """
     TINY          = 1e-6    # to avoid NaNs in logs
-    
+
+    # if prob_matrix is 1D, make it 2D
+    if len(np.shape(prob_matrix)) == 1:
+        prob_matrix = [prob_matrix]
+        
     length = len(prob_matrix)
 
     probs  = np.zeros_like(prob_matrix)
@@ -44,7 +55,8 @@ def viterbi(prob_matrix):
     return seq
 
 def process_sentence(sess, model_settings, model_vars, one_hot_by_t):
-    
+    """ run the inference to segment the given 'sentence' represented by the one_hot vector by time
+    """
     states = np.zeros((model_settings['num_layers'], 2, 1, model_settings['lstm_size']))
     
     feed = { model_vars['inputs']:  one_hot_by_t, model_vars['init_state']: states }
@@ -53,7 +65,8 @@ def process_sentence(sess, model_settings, model_vars, one_hot_by_t):
     return np.squeeze(probs)
 
 def process_input_sentence(sess, char_dict, model_settings, model_vars, sentence):
-            
+    """ run the inference to segment the given 'sentence' into words seperated by '|' 
+    """
     chars = list(sentence.strip())
     cids = char_dict.chars2cids(chars)
     
@@ -67,7 +80,10 @@ def process_input_sentence(sess, char_dict, model_settings, model_vars, sentence
     print('|'.join(words))
 
 def process_input_file(sess, char_dict, model_settings, model_vars, input_file):
-        
+    """ read the input_file line by line, and run the inference to segment each line 
+        into words seperated by '|'
+    """
+    
     with open(input_file, 'r') as f:
         for s in f: # s is the line string
             if s and (len(s) > 0):
@@ -85,7 +101,9 @@ def process_input_file(sess, char_dict, model_settings, model_vars, input_file):
                 print('|'.join(words))
 
 def load_model(sess, meta_file, checkpoint_file):
-
+    """ loading necessary configuration of the network from the meta file & 
+        the checkpoint file together with variables that are needed for the inferences
+    """
     saver = tf.train.import_meta_graph(meta_file)
     saver.restore(sess, checkpoint_file)
     
