@@ -1,6 +1,15 @@
+#!/usr/bin/env python3
+#
+# Pucktada Treeratpituk (https://github.com/pucktada)
+# License: MIT
+# 2017-05-01
+
 import numpy as np
 
 class CharDictionary:
+    """ a utility class for converting characters into character ids. 
+        the id 0 is reserved for padding (both for character ids and label ids)
+    """
     
     def __init__(self):
         thai_chars = 'กขฃคฅฆงจฉชซฌญฐฎฏฐฑฒณดตถทธนบปผฝพฟภมยรฤลฦวศษสหฬอฮฯะัาำิีึืุูเแโใไๅๆ็่้๊๋์ํ' # 1..72
@@ -41,15 +50,17 @@ class CharDictionary:
         self._cid2char.append('A')
 
     def num_char_classes(self):
-        ''' return the number of character classes '''
+        """ return the number of character classes """
         # minus 1... cause cid 0 is not used... reserved for padding
         return len(self._cid2char) - 1 # 
     
     def num_label_classes(self):
-        ''' return the number of label classes '''
+        """ return the number of label classes """        
         return len(self._class_for) # B, M, E, S
 
     def words2cids(self, words):
+        """ return the arrays of character ids and labels for a given array of words        
+        """
         chars, labels = self.words2chars(words)
         cids = self.chars2cids(chars)
         return cids, labels
@@ -57,8 +68,7 @@ class CharDictionary:
     # labels = {B, M, E, S} <=== 0:begin, 1:middle, 2:end, 3:single
     # convert words array to character array, and create a labels
     def words2chars(self, words):
-        """
-        convert array of words, into array of characters and array of word boundaries
+        """ return the arrays of characters and labels for a given array of words        
         """
         chars, labels = [], []
 
@@ -77,9 +87,10 @@ class CharDictionary:
         return chars, labels
 
     def chars2words(self, chars, labels):
+        """ return array of words for the given arrays of characters and labels
+            (the reverse of 'words2chars')
         """
-        convert array of characters and array of word boundaries into array of words
-        """
+
         words = []
         word = ''
         class_for = {'B':1, 'M':2, 'E':3, 'S':4}
@@ -106,18 +117,24 @@ class CharDictionary:
         return words
     
     def cidOf(self, c):
+        """ return the character id of the given character 'c' """
         if c in self._char2cid:
             return self._char2cid[c]
         else:
             return 1 # UNK_ID
     
     def chars2cids(self, chars):
+        """ return the array of character ids for the given arrays of characters """        
         return [self.cidOf(c) for c in chars]
         
     def cids2chars(self, cids):
+        """ return the array of characters for the given arrays of character ids 
+            (the reverse of chars2cids)
+        """
         return [self._cid2char[i] for i in cids]
 
-def main():
+def test_char_dict():
+    print('testing character dictionary')
     words = ['กฎหมาย', 'กับ', '1', 'การ', 'เบียดบัง', 'คน']
     
     dic = CharDictionary()
@@ -129,4 +146,4 @@ def main():
     print(dic.cids2chars(cids))
 
 if __name__ == '__main__':
-    main()
+    test_char_dict()

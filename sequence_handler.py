@@ -1,22 +1,27 @@
+#!/usr/bin/env python3
+#
+# Pucktada Treeratpituk (https://github.com/pucktada)
+# License: MIT
+# 2017-05-01
+#
+# A set of utility functions for reading and writing to TFRecord
+
 import tensorflow as tf
 import numpy as np
 
 def get_num_records(filename):
+    """ return the number of record within a given TFRecord file """
     return len([x for x in tf.python_io.tf_record_iterator(filename)])
     
 # Write all examples into a TFRecords file
 def save_tfrecord(writer, sources, targets):
+    """ write the sources and targets sequences into a TFRecord file (given by writer) """
     for source, target in zip(sources, targets):
         ex = make_example(source, target)
         writer.write(ex.SerializeToString())
 
 def make_example(source, target):
-    '''
-        Generates a SequenceExample out of a sequence of inputs and outputs
-        :param sequence: Sequence input
-        :param labels: Sequence output
-        :return: SequenceExample
-    '''
+    """ create a SequenceExample out of a sequence of source and target """
     # The object we return
     ex = tf.train.SequenceExample()
     # A non-sequential feature of our example
@@ -55,8 +60,8 @@ def read_and_decode_single_example(filenames, shuffle=False, num_epochs=None):
             })
     return (key, context, sequences)
         
-def main():
-    print('sequence_handler:main')
+def test_sequence_handler():
+    print('testing sequence_handler')
     tmp_filename = 'tf.tmp'
 
     writer = tf.python_io.TFRecordWriter(tmp_filename)
@@ -93,4 +98,4 @@ def main():
         coord.join(threads)
     
 if __name__ == '__main__':
-    main()
+    test_sequence_handler()
