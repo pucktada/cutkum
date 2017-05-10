@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Pucktada Treeratpituk (https://github.com/pucktada)
+# Pucktada Treeratpituk (https://pucktada.github.io/)
 # License: MIT
 # 2017-05-01
 #
