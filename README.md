@@ -50,6 +50,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## To Do
 
-* Improve performance
-* Providing a script for training a new model
+* Improve performance, with better better model, and better included trained-model
+* Providing a script for training a new model (coming soon!, give me some times to refactor the code)
+* Providing a script for reproducing the experiment... :)
 
