@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Pucktada Treeratpituk (https://pucktada.github.io/)
+# License: MIT
+# 2017-05-21
+from __future__ import unicode_literals
 from os import listdir
 from os.path import isfile, isdir, join
 import re

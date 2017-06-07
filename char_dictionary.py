@@ -1,10 +1,13 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 #
 # Pucktada Treeratpituk (https://pucktada.github.io/)
 # License: MIT
-# 2017-05-01
-
+# 2017-05-21
+from __future__ import unicode_literals
+from __future__ import print_function
 import numpy as np
+import sys
 
 class CharDictionary:
     """ a utility class for converting characters into character ids. 
@@ -138,12 +141,17 @@ def test_char_dict():
     words = ['กฎหมาย', 'กับ', '1', 'การ', 'เบียดบัง', 'คน']
     
     dic = CharDictionary()
+    
+    sen = list('สารานุกรมไทยสำหรับเยาวชนฯ')
+    chars = dic.words2chars(sen)
+    print(chars)
+    
     chars, labels = dic.words2chars(words)
     cids = dic.chars2cids(chars)
     
-    print(chars)
+    print(' '.join(chars))
     print(dic.chars2cids(chars))
-    print(dic.cids2chars(cids))
+    print(' '.join(dic.cids2chars(cids)))
 
 if __name__ == '__main__':
     test_char_dict()

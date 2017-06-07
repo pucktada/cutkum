@@ -1,75 +1,55 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 #
 # Pucktada Treeratpituk (https://pucktada.github.io/)
 # License: MIT
 # 2017-05-01
 #
 # A command-line function to load a trained model and compute the word segmentation
-
+#from __future__ import unicode_literals
 import math
 from os import listdir
 from os.path import isfile, isdir, join
 import sys
+import re
 import configargparse
 import logging
 import tensorflow as tf
 import numpy as np
 from char_dictionary import CharDictionary
 from ck_model import CkModel
-
-# shape(prob_matrix) = [#times, #classes]
-def viterbi(prob_matrix):
-    """ find the most likely sequence of labels using the viterbi algorithm on prob_matrix """
-    TINY          = 1e-6    # to avoid NaNs in logs
-
-    # if prob_matrix is 1D, make it 2D
-    if len(np.shape(prob_matrix)) == 1:
-        prob_matrix = [prob_matrix]
-        
-    length = len(prob_matrix)
-
-    probs  = np.zeros_like(prob_matrix)
-    backpt = np.ones_like(prob_matrix, dtype=np.int32) * -1
-    
-    for i in [0,1,2,3,4]:
-        probs[0][i] = np.log(prob_matrix[0][i]+TINY)
-        
-    # {B, M, E, S} <=== 0:begin, 1:middle, 2:end, 3:single
-    for t in range(1, length):
-        # E, S -> B | B, M -> M | B, M -> E | E, S -> S
-        previous_of = [[0,0], [3,4], [1,2], [1,2], [3,4]]
-        for i in range(5):
-            prevs = previous_of[i]
-            max_id = prevs[np.argmax([probs[t-1][prevs[0]], probs[t-1][prevs[1]]])]
-            backpt[t][i] = max_id
-            probs[t][i]  = np.log(prob_matrix[t][i]+TINY) + probs[t-1][max_id]
-
-    seq = np.ones(length, 'int32') * -1
-    #print(probs[length-1])
-    seq[length-1] = np.argmax(probs[length-1])
-    #print(seq[length-1])
-    max_prob = probs[length-1][seq[length-1]]
-    for t in range(1, length):
-        seq[length-1-t] = backpt[length-t][seq[length-t]]
-    
-    return seq
+from utility import viterbi, load_validation_set
 
 def process_sentence(sess, model_settings, model_vars, one_hot_by_t):
     """ run the inference to segment the given 'sentence' represented by the one_hot vector by time
     """
-    states = np.zeros((model_settings['num_layers'], 2, 1, model_settings['lstm_size']))
-    
-    feed = { model_vars['inputs']:  one_hot_by_t, model_vars['init_state']: states }
+    #fw_states = np.zeros((model_settings['num_layers'], 2, 1, model_settings['cell_size']))
+    #bw_states = np.zeros((model_settings['num_layers'], 2, 1, model_settings['cell_size']))
+    feed = { model_vars['inputs']:  one_hot_by_t, 
+        model_vars['seq_lengths']: [one_hot_by_t.shape[0]], 
+        #model_vars['fw_state']: fw_states, 
+        #model_vars['bw_state']: bw_states, 
+        model_vars['keep_prob']: 1.0
+    }
     probs = sess.run([model_vars['probs']], feed_dict=feed)
 
     return np.squeeze(probs)
 
+def process_batch(sess, model_settings, model_vars, one_hot_by_t, seq_lengths):
+    feed = { model_vars['inputs']: one_hot_by_t, 
+        model_vars['seq_lengths']: seq_lengths, 
+        model_vars['keep_prob']: 1.0
+    }
+    probs = sess.run(model_vars['probs'], feed_dict=feed)
+    return probs
+    
 def process_input_sentence(sess, char_dict, model_settings, model_vars, sentence):
     """ run the inference to segment the given 'sentence' into words seperated by '|' 
     """
-    chars = list(sentence.strip())
-    cids = char_dict.chars2cids(chars)
     
+    uni_s = u"%s" % sentence.decode('utf-8') # only for 2.7 (for Python 3, no need to decode)
+    chars = list(uni_s.strip())
+    cids  = char_dict.chars2cids(chars)
+        
     in_embedding = np.eye(model_settings['input_classes'])
     one_hot      = in_embedding[cids]
     one_hot_by_t = np.expand_dims(one_hot, 1)
@@ -80,6 +60,19 @@ def process_input_sentence(sess, char_dict, model_settings, model_vars, sentence
     print('|'.join(words))
 
 def process_input_file(sess, char_dict, model_settings, model_vars, input_file):
+    one_hot_by_t, batch_labels, seq_lengths, chars_mat = load_validation_set([input_file])
+    #print(batch_labels)
+    #print(chars_mat)
+    probs = process_batch(sess, model_settings, model_vars, one_hot_by_t, seq_lengths)
+    
+    _, n_examples, _ = probs.shape
+    for i in range(n_examples):
+        p = probs[0:seq_lengths[i], i, :]
+        labels = viterbi(p)
+        words  = char_dict.chars2words(chars_mat[i], labels)
+        print('|'.join(words))
+
+def process_input_file_prev(sess, char_dict, model_settings, model_vars, input_file):
     """ read the input_file line by line, and run the inference to segment each line 
         into words seperated by '|'
     """
@@ -87,7 +80,8 @@ def process_input_file(sess, char_dict, model_settings, model_vars, input_file):
     with open(input_file, 'r') as f:
         for s in f: # s is the line string
             if s and (len(s) > 0):
-                chars = list(s.strip())
+                uni_s = u"%s" % s.decode('utf-8') # only for 2.7 (for Python 3, no need to decode)
+                chars = list(uni_s.strip())
                 cids = char_dict.chars2cids(chars)
                 
                 in_embedding = np.eye(model_settings['input_classes'])
@@ -117,7 +111,7 @@ def load_model(sess, meta_file, checkpoint_file):
         
     model_vars = dict()
     for p in pvars:
-        name = p.name.split(':')[0]
+        scope, name, _ = re.split('[:/]', p.name)
         model_vars[name] = p
     model_vars['probs'] = tf.get_collection('probs')[0]
     
