@@ -8,6 +8,8 @@
 
 import tensorflow as tf
 import numpy as np
+from os import listdir
+from os.path import isfile, isdir, join
 
 def get_num_records(filename):
     """ return the number of record within a given TFRecord file """
@@ -96,6 +98,19 @@ def test_sequence_handler():
         # stop our queue threads and properly close the session
         coord.request_stop()
         coord.join(threads)
+  
+def count_sentence(dirname):
+    files = [join(dirname, f) for f in listdir(dirname)]
     
+    total = 0
+    for f in files:
+        num = get_num_records(f)
+        total += num
+        
+    print('total', total)
+        
 if __name__ == '__main__':
-    test_sequence_handler()
+    #test_sequence_handler()
+    count_sentence('data/train')
+    
+    
