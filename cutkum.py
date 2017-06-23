@@ -86,8 +86,9 @@ def process_input_file(sess, char_dict, model_settings, model_vars, input_file):
     
     with open(input_file, 'r') as f:
         for s in f: # s is the line string
-            if s and (len(s) > 0):
-                chars = list(s.strip())
+            ss = s.strip()
+            if ss and (len(ss) > 0):
+                chars = list(ss)
                 cids = char_dict.chars2cids(chars)
                 
                 in_embedding = np.eye(model_settings['input_classes'])
