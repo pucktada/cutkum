@@ -1,11 +1,12 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 #
 # Pucktada Treeratpituk (https://pucktada.github.io/)
 # License: MIT
 # 2017-05-01
 #
 # A command-line function to load a trained model and compute the word segmentation
-#from __future__ import unicode_literals
+from __future__ import unicode_literals
 import math
 from os import listdir
 from os.path import isfile, isdir, join
@@ -15,9 +16,9 @@ import configargparse
 import logging
 import tensorflow as tf
 import numpy as np
-from char_dictionary import CharDictionary
-from ck_model import CkModel
-from utility import viterbi, load_validation_set
+from ck_model.char_dictionary import CharDictionary
+from ck_model.ck_model import CkModel, load_model
+from ck_model import util #viterbi, load_validation_set
 
 def process_sentence(sess, model_settings, model_vars, one_hot_by_t):
     """ run the inference to segment the given 'sentence' represented by the one_hot vector by time
@@ -35,6 +36,7 @@ def process_sentence(sess, model_settings, model_vars, one_hot_by_t):
     return np.squeeze(probs)
 
 def process_batch(sess, model_settings, model_vars, one_hot_by_t, seq_lengths):
+
     feed = { model_vars['inputs']: one_hot_by_t, 
         model_vars['seq_lengths']: seq_lengths, 
         model_vars['keep_prob']: 1.0
@@ -55,22 +57,24 @@ def process_input_sentence(sess, char_dict, model_settings, model_vars, sentence
     one_hot_by_t = np.expand_dims(one_hot, 1)
 
     probs = process_sentence(sess, model_settings, model_vars, one_hot_by_t)
-    labels = viterbi(probs)
+    labels = util.viterbi(probs)
     words   = char_dict.chars2words(chars, labels)
     print('|'.join(words))
 
 def process_input_file(sess, char_dict, model_settings, model_vars, input_file):
-    one_hot_by_t, batch_labels, seq_lengths, chars_mat = load_validation_set([input_file])
-    #print(batch_labels)
-    #print(chars_mat)
+    one_hot_by_t, seq_lengths, chars_mat = util.load_files_into_matrix([input_file])
     probs = process_batch(sess, model_settings, model_vars, one_hot_by_t, seq_lengths)
     
     _, n_examples, _ = probs.shape
     for i in range(n_examples):
-        p = probs[0:seq_lengths[i], i, :]
-        labels = viterbi(p)
-        words  = char_dict.chars2words(chars_mat[i], labels)
-        print('|'.join(words))
+        if (seq_lengths[i] != 0):
+            p = probs[0:seq_lengths[i], i, :]
+            labels = util.viterbi(p)
+            words  = char_dict.chars2words(chars_mat[i], labels)
+            print('|'.join(words))
+        else:
+            print('')
+
 
 def process_input_file_prev(sess, char_dict, model_settings, model_vars, input_file):
     """ read the input_file line by line, and run the inference to segment each line 
@@ -93,35 +97,12 @@ def process_input_file_prev(sess, char_dict, model_settings, model_vars, input_f
                 labels = viterbi(probs)
                 words   = char_dict.chars2words(chars, labels)
                 print('|'.join(words))
-
-def load_model(sess, meta_file, checkpoint_file):
-    """ loading necessary configuration of the network from the meta file & 
-        the checkpoint file together with variables that are needed for the inferences
-    """
-    saver = tf.train.import_meta_graph(meta_file)
-    saver.restore(sess, checkpoint_file)
-    
-    configs = tf.get_collection('configs')
-    pvars   = tf.get_collection('placeholders')
-    
-    model_settings = dict()
-    for c in configs:
-        name = c.name.split(':')[0]
-        model_settings[name] = sess.run(c)
-        
-    model_vars = dict()
-    for p in pvars:
-        scope, name, _ = re.split('[:/]', p.name)
-        model_vars[name] = p
-    model_vars['probs'] = tf.get_collection('probs')[0]
-    
-    return model_settings, model_vars
     
 if __name__ == '__main__':
     
     p = configargparse.getArgParser()
     p.add('-v', '--verbose', help='verbose', action='store_true')
-    p.add('-m', '--meta_file', required=True, help='meta file')    
+    p.add('-m', '--meta_file', required=True, help='meta file')
     p.add('-c', '--checkpoint_file', required=True, help='checkpoint file')
     group = p.add_mutually_exclusive_group(required=True)
     group.add('-i', '--input_file', help='input file')
