@@ -128,9 +128,9 @@ if __name__ == '__main__':
         char_dict = CharDictionary()
         model_settings, model_vars = load_model(sess, meta_file, checkpoint_file)
         
-        if input_file is not None:
-            process_input_file(sess, char_dict, model_settings, model_vars, input_file)        
-        elif input_sentence is not None:
-            process_input_sentence(sess, char_dict, model_settings, model_vars, input_sentence)
+        #if input_file is not None:
+        #    process_input_file(sess, char_dict, model_settings, model_vars, input_file)        
+        #elif input_sentence is not None:
+        #    process_input_sentence(sess, char_dict, model_settings, model_vars, input_sentence)
 
       
