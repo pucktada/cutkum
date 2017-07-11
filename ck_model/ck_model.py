@@ -20,11 +20,29 @@ def load_model(sess, meta_file, checkpoint_file):
         the checkpoint file together with variables that are needed for the inferences
     """
     saver = tf.train.import_meta_graph(meta_file, clear_devices=True)
-    saver.restore(sess, checkpoint_file)
-    
+    saver.restore(sess, checkpoint_file)    
+    #saver = tf.train.import_meta_graph('puck', clear_devices=True)
+    #print(saver)
+    #saver.restore(sess, checkpoint_file)    
+
+    #'bidirectional_rnn', 'fully_connected', 'configs', 'placeholders'
+    #myvars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES) 
+    #[v.op.name for v in tf.global_variables()]
+
+    fvars   = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
     configs = tf.get_collection('configs')
     pvars   = tf.get_collection('placeholders')
-    
+
+    #saver.save()
+    print(fvars)
+    print(configs)
+    print(pvars)
+
+    mylist = fvars + pvars + configs
+    names = [t.name for t in mylist]
+    tf.train.export_meta_graph(filename='puck', collection_list=names)
+    #saver.save(mylist, )
+
     model_settings = dict()
     for c in configs:
         name = c.name.split(':')[0]
@@ -36,6 +54,8 @@ def load_model(sess, meta_file, checkpoint_file):
         model_vars[name] = p
     model_vars['probs'] = tf.get_collection('probs')[0]
     
+
+
     return model_settings, model_vars
 
 class CkModel:
