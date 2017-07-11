@@ -308,7 +308,21 @@ def load_validation_set(test_files):
 
 if __name__ == '__main__':
     
+
+    #test_files = ['data/test_txt/article_00179.txt', 
+    #    'data/test_txt/encyclopedia_00099.txt', 
+    #    'data/test_txt/news_00088.txt', 
+    #    'data/test_txt/novel_00098.txt']
     test_files = ['data/test_txt/article_00179.txt']
+        
+    #one_hot_by_t, seq_lengths, chars_mat, boundary_mat = load_validation_set(test_files)
+    #print(one_hot_by_t.shape)
+    #print(len(seq_lengths))
+    #print(len(chars_mat))
+    #print(len(boundary_mat))
+    #labels = viterbi(probs)
+    #words  = char_dict.chars2words(chars, labels)
+    #print('|'.join(words))
     
     answers = u"เขา|ร้อง|บท|<POEM>เย็นย่ำ จะค่ำอยู่แล้วลงรอนรอน</POEM>|".split('|')[:-1]
     print('|'.join(answers))

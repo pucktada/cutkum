@@ -54,8 +54,6 @@ def load_model(sess, meta_file, checkpoint_file):
         model_vars[name] = p
     model_vars['probs'] = tf.get_collection('probs')[0]
     
-
-
     return model_settings, model_vars
 
 class CkModel:
