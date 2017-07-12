@@ -5,7 +5,7 @@ Cutkum is trained on BEST2010, a 5 Millions Thai words corpus by NECTEC (https:/
 
 98.0% recall, 96.3% precision, 97.1% F-measure (character-level)
 
-93.4% recall, 93.9% precision and 93.7% F-measure (word-level -- same evaluation method as BEST2010)
+93.5% recall, 94.1% precision and 94.0% F-measure (word-level -- same evaluation method as BEST2010)
 
 # Requirements
 * python = 2.7
