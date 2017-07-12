@@ -3,7 +3,8 @@
 from __future__ import unicode_literals
 import sys
 from tensorflow.python.lib.io import file_io
-from ck_model.char_dictionary import CharDictionary
+#from .char_dictionary import char_dictionary
+from .char_dictionary import CharDictionary
 import numpy as np
 import re
 
@@ -229,7 +230,6 @@ def load_files_into_matrix(test_files):
         with file_io.FileIO(input_file, 'r') as f:
             for s in f: # s is the line string
                 s = s.decode('utf8')
-                #print(s)
                 if s and (len(s) > 0):
                     
                     chars = list(s.strip())
@@ -251,7 +251,6 @@ def load_files_into_matrix(test_files):
     
     #(time, batch, in)
     one_hot_by_t = np.transpose(one_hot, (1,0,2))
-    
     return one_hot_by_t, seq_lengths, chars_mat
 '''
     test_files: list of file to load
@@ -274,7 +273,7 @@ def load_validation_set(test_files):
     for input_file in test_files:
         with file_io.FileIO(input_file, 'r') as f:
             for s in f: # s is the line string
-                s = s.decode('utf8')
+                #s = s.decode('utf8')
                 if s and (len(s) > 0):
                     t = re.sub("<[^>]*>", "", s.strip())
                     t = re.sub("[|]", "", t)

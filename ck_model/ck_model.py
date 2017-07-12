@@ -5,7 +5,6 @@
 # 2017-05-01
 #
 # A recurrent neural network model (LSTM) for thai word segmentation
-
 import logging
 import re
 import numpy as np
@@ -13,35 +12,61 @@ import tensorflow as tf
 import tensorflow.contrib.layers as layers
 import tensorflow.contrib.rnn as rnn
 
-from ck_model.char_dictionary import CharDictionary
+from . import char_dictionary
 
-def load_model(sess, meta_file, checkpoint_file):
+def load_settings(sess):
+
+    model_settings = dict()        
+    model_vars = dict()
+
+    graph = tf.get_default_graph()
+
+    configs = ['cell_sizes', 'num_layers', 'input_classes', 'label_classes', 'learning_rate', 'l2_regularization', 'cell_type', 'direction']
+    for c in configs:
+        name = 'prefix/%s:0' % c
+        model_settings[c] = sess.run(graph.get_tensor_by_name(name))
+
+    model_vars['inputs']  = graph.get_tensor_by_name('prefix/placeholder/inputs:0')
+    model_vars['seq_lengths'] = graph.get_tensor_by_name('prefix/placeholder/seq_lengths:0')
+    model_vars['keep_prob'] = graph.get_tensor_by_name('prefix/placeholder/keep_prob:0')
+
+    model_vars['probs'] = graph.get_tensor_by_name('prefix/batch_probs:0')
+
+    return model_settings, model_vars
+
+def load_graph(model_file):
+    """ loading necessary configuration of the network from the meta file & 
+        the checkpoint file together with variables that are needed for the inferences
+    """
+
+    # We load the protobuf file from the disk and parse it to retrieve the 
+    # unserialized graph_def
+    with tf.gfile.GFile(model_file, "rb") as f:
+        graph_def = tf.GraphDef()
+        graph_def.ParseFromString(f.read())
+
+    # Then, we can use again a convenient built-in function to import a graph_def into the 
+    # current default Graph
+    with tf.Graph().as_default() as graph:
+        tf.import_graph_def(
+            graph_def,
+            input_map=None, 
+            return_elements=None, 
+            name='prefix',
+            op_dict=None,
+            producer_op_list=None)
+
+    return graph
+
+def load_model2(sess, meta_file, checkpoint_file):
     """ loading necessary configuration of the network from the meta file & 
         the checkpoint file together with variables that are needed for the inferences
     """
     saver = tf.train.import_meta_graph(meta_file, clear_devices=True)
     saver.restore(sess, checkpoint_file)    
-    #saver = tf.train.import_meta_graph('puck', clear_devices=True)
-    #print(saver)
-    #saver.restore(sess, checkpoint_file)    
 
-    #'bidirectional_rnn', 'fully_connected', 'configs', 'placeholders'
-    #myvars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES) 
-    #[v.op.name for v in tf.global_variables()]
-
-    fvars   = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
     configs = tf.get_collection('configs')
     pvars   = tf.get_collection('placeholders')
-
-    #saver.save()
-    print(fvars)
-    print(configs)
-    print(pvars)
-
-    mylist = fvars + pvars + configs
-    names = [t.name for t in mylist]
-    tf.train.export_meta_graph(filename='puck', collection_list=names)
-    #saver.save(mylist, )
 
     model_settings = dict()
     for c in configs:
@@ -53,7 +78,7 @@ def load_model(sess, meta_file, checkpoint_file):
         scope, name, _ = re.split('[:/]', p.name)
         model_vars[name] = p
     model_vars['probs'] = tf.get_collection('probs')[0]
-    
+
     return model_settings, model_vars
 
 class CkModel:
@@ -174,7 +199,7 @@ class CkModel:
         self.logits = tf.map_fn(self.projection, rnn_outputs, name="logits")
         self.probs  = tf.nn.softmax(self.logits, name="probs")
         self.states = states
-        
+
         tf.add_to_collection('probs',  self.probs)
     
     def _create_loss(self):
