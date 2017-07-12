@@ -3,7 +3,7 @@ Cutkum ('คัดคำ') is a python code for Thai Word-Segmentation using Rec
 
 Cutkum is trained on BEST2010, a 5 Millions Thai words corpus by NECTEC (https://www.nectec.or.th/). It also comes with an already trained model, and can be used right out of the box. Cutkum is still a work-in-progress project. Evaluated on the 10% hold-out data from BEST2010 corpus (~600,000 words), the included trained model currently performs at 
 
-97.3% recall, 96.7% precision, 97.0% F-measure (character-level)
+98.0% recall, 96.3% precision, 97.1% F-measure (character-level)
 
 93.4% recall, 93.9% precision and 93.7% F-measure (word-level -- same evaluation method as BEST2010)
 
