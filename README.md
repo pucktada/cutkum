@@ -30,24 +30,6 @@ which will produce the resulting word segmentation as followed (words are sepera
 สารานุกรม|ไทย|สำหรับ|เยาวชน|ฯ
 ```
 
-# Citations
-Please consider citing this project in your publications if it helps your research.
-The following is a [BibTeX](http://www.bibtex.org/) and plaintext reference.
-The BibTeX entry requires the `url` LaTeX package.
-
-```
-@misc{treeratpituk2017cutkum,
-    title        = {{Thai Word-Segmentation with Deep Learning in Tensorflow}},
-    author       = {Treeratpituk, Pucktada},
-    howpublished = {\url{https://github.com/pucktada/cutkum}},
-    note         = {Accessed: [Insert date here]}
-}
-
-Pucktada Treeratpituk. Thai Word-Segmentation with Deep Learning in Tensorflow.
-https://github.com/pucktada/cutkum.
-Accessed: [Insert date here]
-```
-
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
@@ -55,6 +37,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## To Do
 
 * Improve performance, with better better model, and better included trained-model
-* Providing a script for training a new model (coming soon!, give me some times to refactor the code)
-* Providing a script for reproducing the experiment... :)
 
