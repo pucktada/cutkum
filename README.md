@@ -33,7 +33,7 @@ which will produce the resulting word segmentation as followed (words are sepera
 สารานุกรม|ไทย|สำหรับ|เยาวชน|ฯ
 ```
 
-or if one want to segment a text file and save to a 
+or if one want to segment a text file 'input.txt' and save the result to 'output.txt'
 
 ```
 ./cutkum.py -m model/lstm.l6.d2.pb -i input.txt > output.txt
