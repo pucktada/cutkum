@@ -47,4 +47,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## To Do
 
 * Improve performance, with better better model, and better included trained-model
+* Improve the speed when processing big file
 
