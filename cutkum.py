@@ -16,9 +16,9 @@ import numpy as np
 import re
 import sys
 import tensorflow as tf
-from ck_model.char_dictionary import CharDictionary
-from ck_model.ck_model import CkModel, load_graph, load_settings
-from ck_model import util #viterbi, load_validation_set
+from cutkum.char_dictionary import CharDictionary
+from cutkum.ck_model import CkModel, load_graph, load_settings
+from cutkum import util #viterbi, load_validation_set
 
 def process_sentence(sess, model_settings, model_vars, one_hot_by_t):
     """ run the inference to segment the given 'sentence' represented by the one_hot vector by time

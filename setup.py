@@ -3,11 +3,23 @@ from setuptools import setup
 
 REQUIRED_PACKAGES = ['numpy>=1.0', 'ConfigArgParse>=0.12', 'tensorflow']
 
-setup(
-    name='cutkum',
-    version='1.0',
-    install_requires=REQUIRED_PACKAGES,
+def readme():
+	with open('README.md') as f:
+		return f.read()
+
+setup(name='cutkum',
+	version='1.0',
+	description='Thai Word-Segmentation with LSTM in Tensorflow',
+	long_description=readme(),
+	keywords='funniest joke comedy flying circus',
+	url='https://github.com/pucktada/cutkum',
+	author='Puck Treeratpituk',
+	author_email='pucktada@gmail.com',
+	license='MIT',
     packages=find_packages(),
-    include_package_data=True,
-    description='Thai Word-Segmentation with LSTM in Tensorflow'
-)
+    install_requires=REQUIRED_PACKAGES,
+	entry_points={
+		'console_scripts': ['cutkum=cutkum.command_line:main'],
+	},
+	include_package_data=True,
+	zip_safe=False)
