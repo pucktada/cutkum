@@ -96,7 +96,10 @@ def process_input_file(sess, char_dict, model_settings, model_vars, input_file, 
                 labels = util.viterbi(p)
 
             words  = char_dict.chars2words(chars_mat[i], labels)
-            print('|'.join(words))
+            line_out = '|'.join(words)
+            if (sys.version_info <= (3, 0)):
+                line_out = line_out.encode('utf8')
+            print(line_out)
         else:
             print('')
 
@@ -143,11 +146,11 @@ if __name__ == '__main__':
     p = argparse.ArgumentParser()
     p.add_argument('-v', '--verbose', help='verbose', action='store_true')
     p.add_argument('-m', '--model_file', required=True, help='model file to load')
-    p.add_argument('-o', '--output_dir', help='output directory if --directory is given')
     g1 = p.add_mutually_exclusive_group(required=True)
     g1.add_argument('-d', '--directory', help='input directory')
     g1.add_argument('-i', '--input_file', help='input file')
     g1.add_argument('-s', '--sentence', help='sentence to parse')
+    p.add_argument('-o', '--output_dir', help='output directory if --directory is given')
 
     g2 = p.add_mutually_exclusive_group(required=False)
     g2.add_argument('--max', action='store_const', dest='max_flag', const='max', help='output word boundary using maximum probabilities (default)')

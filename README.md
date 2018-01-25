@@ -13,10 +13,13 @@ Cutkum is trained on BEST2010, a 5 Millions Thai words corpus by NECTEC (https:/
 
 # Usages
 ```
-usage: cutkum.py [-h] [-v] -m MODEL_FILE (-i INPUT_FILE | -s SENTENCE)
+usage: cutkum.py [-h] [-v] -m MODEL_FILE
+                 (-d DIRECTORY | -i INPUT_FILE | -s SENTENCE) [-o OUTPUT_DIR]
+                 [--max | --viterbi]
+
 ```
 
-`cutkum.py` needs two files to load the trained model, a meta_file (the network definition) and a checkpoint_file (the trained weights). `cutkum.py` can be used in two ways, to segment text directly from a given sentence (with -s) or to segment text within a file (with -i)
+`cutkum.py` needs to load the trained model, the current included model (model/lstm.l6.d2.pb) is a bi-directional LSTM neural network with 6 layers. `cutkum.py` can be used in 3 ways, 1. to segment text directly from a given sentence (with -s), 2. to segment text within a file (with -i), and 3. to segment all the files within a given directory.
 
 For example, one can run `cutkum.py` to segment a thai phrase `"สารานุกรมไทยสำหรับเยาวชนฯ"` by running
 
@@ -29,6 +32,13 @@ which will produce the resulting word segmentation as followed (words are sepera
 ```
 สารานุกรม|ไทย|สำหรับ|เยาวชน|ฯ
 ```
+
+or if one want to segment a text file and save to a 
+
+```
+./cutkum.py -m model/lstm.l6.d2.pb -i input.txt > output.txt
+```
+
 
 ## License
 
