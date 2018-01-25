@@ -62,7 +62,7 @@ def viterbi(prob_matrix):
 
     probs  = np.zeros_like(prob_matrix)
     backpt = np.ones_like(prob_matrix, dtype=np.int32) * -1
-    
+
     for i in [0,1,2,3,4]:
         probs[0][i] = np.log(prob_matrix[0][i]+TINY)
         
@@ -229,9 +229,9 @@ def load_files_into_matrix(test_files):
     for input_file in test_files:
         with file_io.FileIO(input_file, 'r') as f:
             for s in f: # s is the line string
-                s = s.decode('utf8')
-                if s and (len(s) > 0):
-                    
+                if (sys.version_info <= (3, 0)):
+                    s = s.decode('utf8')
+                if s and (len(s) > 0):                    
                     chars = list(s.strip())
                     cids = char_dict.chars2cids(chars)
                     seq_lengths += [len(cids)]
@@ -273,7 +273,8 @@ def load_validation_set(test_files):
     for input_file in test_files:
         with file_io.FileIO(input_file, 'r') as f:
             for s in f: # s is the line string
-                #s = s.decode('utf8')
+                if (sys.version_info <= (3, 0)):
+                    s = s.decode('utf8')
                 if s and (len(s) > 0):
                     t = re.sub("<[^>]*>", "", s.strip())
                     t = re.sub("[|]", "", t)
@@ -314,8 +315,8 @@ if __name__ == '__main__':
     #    'data/test_txt/novel_00098.txt']
     test_files = ['data/test_txt/article_00179.txt']
         
-    #one_hot_by_t, seq_lengths, chars_mat, boundary_mat = load_validation_set(test_files)
-    #print(one_hot_by_t.shape)
+    one_hot_by_t, seq_lengths, chars_mat, boundary_mat = load_validation_set(test_files)
+    print(one_hot_by_t.shape)
     #print(len(seq_lengths))
     #print(len(chars_mat))
     #print(len(boundary_mat))
