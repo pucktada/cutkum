@@ -8,7 +8,7 @@ Cutkum is trained on BEST2010, a 5 Millions Thai words corpus by NECTEC (https:/
 
 # Requirements
 * python = 2.7, 3.0+
-* tensorflow >= 1.1
+* tensorflow = 1.3
 
 # Installation
 
@@ -17,7 +17,8 @@ Cutkum is trained on BEST2010, a 5 Millions Thai words corpus by NECTEC (https:/
 ```
 pip install cutkum
 
-# then download the trained model (either from github/) or with wget
+# then download the trained model (either from github) or with wget
+
 wget https://raw.githubusercontent.com/pucktada/cutkum/master/model/lstm.l6.d2.pb
 ```
 
@@ -26,13 +27,19 @@ wget https://raw.githubusercontent.com/pucktada/cutkum/master/model/lstm.l6.d2.p
 Once installed, you can use `cutkum` within your python code to tokenize thai sentences. 
 
 ```
-from cutkum.tokenizer import Cutkum
 
-ck = Cutkum('lstm.l6.d2.pb')
-words = ck.tokenize("สารานุกรมไทยสำหรับเยาวชนฯ")
+>>> from cutkum.tokenizer import Cutkum
 
+>>> ck = Cutkum('lstm.l6.d2.pb')
+>>> words = ck.tokenize("สารานุกรมไทยสำหรับเยาวชนฯ")
+
+# python 3.0
+>>> words
+['สารานุกรม', 'ไทย', 'สำหรับ', 'เยาวชน', 'ฯ']
+
+# python 2.7
+>>> print("|".join(words)) 
 # สารานุกรม|ไทย|สำหรับ|เยาวชน|ฯ
-print("|".join(words))
 
 ```
 
