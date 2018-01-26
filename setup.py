@@ -1,17 +1,17 @@
 from setuptools import find_packages
 from setuptools import setup
 
-REQUIRED_PACKAGES = ['numpy>=1.0', 'ConfigArgParse>=0.12', 'tensorflow']
+REQUIRED_PACKAGES = ['numpy==1.13', 'ConfigArgParse>=0.12', 'tensorflow']
 
 def readme():
 	with open('README.md') as f:
 		return f.read()
 
 setup(name='cutkum',
-	version='1.0',
+	version='1.4',
 	description='Thai Word-Segmentation with LSTM in Tensorflow',
 	long_description=readme(),
-	keywords='funniest joke comedy flying circus',
+	keywords='thai tokenizer tensorflow lstm',
 	url='https://github.com/pucktada/cutkum',
 	author='Puck Treeratpituk',
 	author_email='pucktada@gmail.com',
@@ -22,4 +22,4 @@ setup(name='cutkum',
 		'console_scripts': ['cutkum=cutkum.command_line:main'],
 	},
 	include_package_data=True,
-	zip_safe=False)
+	zip_safe=True)
