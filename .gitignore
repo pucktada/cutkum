@@ -8,7 +8,6 @@ __pycache__/
 
 # Distribution / packaging
 .Python
-cutkum/train.py
 env/
 build/
 develop-eggs/
