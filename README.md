@@ -6,6 +6,9 @@ Cutkum is trained on BEST2010, a 5 Millions Thai words corpus by NECTEC (https:/
 98.0% recall, 96.3% precision, 97.1% F-measure (character-level)
 93.5% recall, 94.1% precision and 94.0% F-measure (word-level -- same evaluation method as BEST2010)
 
+# Updates
+Feb 02, 2018 - add the training script
+
 # Requirements
 * python = 2.7, 3.0+
 * tensorflow = 1.3
@@ -71,7 +74,6 @@ cutkum -m model/lstm.l6.d2.pb -id input_dir -od output_dir
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
 
 ## To Do
-
 * Improve performance, with better better model, and better included trained-model
 * Improve the speed when processing big file
 
