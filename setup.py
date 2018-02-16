@@ -1,10 +1,11 @@
 from setuptools import find_packages
 from setuptools import setup
+import codecs
 
 REQUIRED_PACKAGES = ['numpy==1.13', 'ConfigArgParse>=0.12', 'tensorflow']
 
 def readme():
-	with open('README.md') as f:
+	with codecs.open('README.md','r',encoding='utf-8') as f:
 		return f.read()
 
 setup(name='cutkum',
