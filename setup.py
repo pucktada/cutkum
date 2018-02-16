@@ -1,7 +1,7 @@
 from setuptools import find_packages
 from setuptools import setup
 
-REQUIRED_PACKAGES = ['numpy>=1.14', 'ConfigArgParse>=0.12', 'tensorflow>=1.3']
+REQUIRED_PACKAGES = ['numpy>=1.14', 'ConfigArgParse>=0.12', 'tensorflow>=1.5']
 
 def readme():
 	with open('README.md') as f:
