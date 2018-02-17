@@ -2,7 +2,7 @@ from setuptools import find_packages
 from setuptools import setup
 import codecs
 
-REQUIRED_PACKAGES = ['numpy==1.13', 'ConfigArgParse>=0.12', 'tensorflow']
+REQUIRED_PACKAGES = ['numpy>=1.14', 'ConfigArgParse>=0.12', 'tensorflow>=1.5']
 
 def readme():
 	with codecs.open('README.md','r',encoding='utf-8') as f:
