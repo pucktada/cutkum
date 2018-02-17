@@ -2,14 +2,14 @@ from setuptools import find_packages
 from setuptools import setup
 import codecs
 
-REQUIRED_PACKAGES = ['numpy>=1.14', 'ConfigArgParse>=0.12', 'tensorflow>=1.5']
+REQUIRED_PACKAGES = ['numpy>=1.14', 'ConfigArgParse>=0.12', 'tensorflow>=1.4']
 
 def readme():
 	with codecs.open('README.md','r',encoding='utf-8') as f:
 		return f.read()
 
 setup(name='cutkum',
-	version='1.4',
+	version='1.4.2',
 	description='Thai Word-Segmentation with LSTM in Tensorflow',
 	long_description=readme(),
 	keywords='thai tokenizer tensorflow lstm',
