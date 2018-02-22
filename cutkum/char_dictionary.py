@@ -17,10 +17,12 @@ class CharDictionary:
     def __init__(self):
         thai_chars = 'กขฃคฅฆงจฉชซฌญฐฎฏฐฑฒณดตถทธนบปผฝพฟภมยรฤลฦวศษสหฬอฮฯะัาำิีึืุูเแโใไๅๆ็่้๊๋์ํ' # 1..73
         numbers = '๐๑๒๓๔๕๖๗๘๙0123456789' # => 74 ' '=> 75, '.'=>76
-        symbols = '()[]<>{}:;^+-*/_=#!~%\\/\'"`?' # 77
-        eng_chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ' # 78
+        symbols1 = ':;^+-*/_=#!~%\\/\'"`?' # 77
+        symbols2 = '()[]<>{}' # 78
+        eng_chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ' # 79
 
         self._class_for = {'B':1, 'M':2, 'E':3, 'S':4}
+        #self._class_for = {'M':1, 'E':2}
 
         self._cid2char = ['', '_'] # ''=padding, _=_UNK
         self._char2cid = dict()
@@ -44,13 +46,29 @@ class CharDictionary:
         self._char2cid['.'] = last_char_id + 3
         self._cid2char.append('.')
         
-        for s in symbols:
+        for s in symbols1:
             self._char2cid[s] = last_char_id + 4
         self._cid2char.append('#')  
 
-        for s in eng_chars:
+        for s in symbols2:
             self._char2cid[s] = last_char_id + 5
+        self._cid2char.append(':')
+
+        for s in eng_chars:
+            self._char2cid[s] = last_char_id + 6
         self._cid2char.append('A')
+
+    # generate padding ' ' of "length"
+    def padding_cids(self, length):
+        return [self._char2cid[' ']] * length
+
+    # generate padding label of "length"
+    def padding_labels(self, length):
+        if (length == 1):
+            return [self._class_for['S']]
+        elif (length == 2):
+            return [self._class_for['B']] + [self._class_for['E']]
+        return [self._class_for['B']] + [self._class_for['M']] * (length-2) + [self._class_for['E']]
 
     def num_char_classes(self):
         """ return the number of character classes """
@@ -67,8 +85,8 @@ class CharDictionary:
         chars, labels = self.words2chars(words)
         cids = self.chars2cids(chars)
         return cids, labels
-        
-    # labels = {B, M, E, S} <=== 0:begin, 1:middle, 2:end, 3:single
+
+   # labels = {B, M, E, S} <=== 0:begin, 1:middle, 2:end, 3:single
     # convert words array to character array, and create a labels
     def words2chars(self, words):
         """ return the arrays of characters and labels for a given array of words        
@@ -118,6 +136,48 @@ class CharDictionary:
         if (len(word) != 0):
             words += [word]
         return words
+
+    # labels = {M, E} <=== 0:begin, 1:middle, 2:end, 3:single
+    # convert words array to character array, and create a labels
+    def words2chars_2class(self, words):
+        """ return the arrays of characters and labels for a given array of words        
+        """
+        chars, labels = [], []
+
+        for w in words:
+            if len(w) == 1: # single char
+                chars.append(w[0])
+                labels.append(self._class_for['E']) # 'S'
+            elif len(w) > 0:
+                chars.append(w[0])
+                labels.append(self._class_for['M']) # 'B'
+                for i in range(len(w)-2):
+                    chars.append(w[i+1])
+                    labels.append(self._class_for['M']) # 'M'
+                chars.append(w[-1])
+                labels.append(self._class_for['E']) # 'E'
+        return chars, labels
+
+    def chars2words_2class(self, chars, labels):
+        """ return array of words for the given arrays of characters and labels
+            (the reverse of 'words2chars')
+        """
+        words = []
+        word = ''
+        for i in range(len(chars)):
+            c = chars[i] # reverse_dict[data[i]]
+            l = labels[i] # 0:begin, 1:middle, 2:end, 3:single
+
+            if l == self._class_for['M']: # middle
+                word += c
+            elif l == self._class_for['E']: # end
+                word += c
+                words += [word]
+                word = ''
+
+        if (len(word) != 0):
+            words += [word]
+        return words
     
     def cidOf(self, c):
         """ return the character id of the given character 'c' """
@@ -138,20 +198,32 @@ class CharDictionary:
 
 def test_char_dict():
     print('testing character dictionary')
-    words = ['กฎหมาย', 'กับ', '1', 'การ', 'เบียดบัง', 'คน']
+    words = ['กฎหมาย', 'กับ', '1', 'ก าร', '(', 'เบียดบัง', 'คน', ')', 'A', 'CD']
     
     dic = CharDictionary()
     
-    sen = list('สารานุกรมไทยสำหรับเยาวชนฯ')
-    chars = dic.words2chars(sen)
-    print(chars)
+    #sen = list('สารานุกรมไทยสำหรับเยาวชนฯ')
+    #chars = dic.words2chars(sen)
+    #print(chars)
     
     chars, labels = dic.words2chars(words)
     cids = dic.chars2cids(chars)
     
+    cids   += dic.padding_cids(6)
+    labels = dic.padding_labels(6) + labels
+
     print(' '.join(chars))
-    print(dic.chars2cids(chars))
-    print(' '.join(dic.cids2chars(cids)))
+    #print(dic.chars2cids(chars))
+    #print(' '.join(dic.cids2chars(cids)))
+    print("[%s]" % '|'.join(words))
+
+    print(len(cids), cids)
+    print(len(labels), labels)
+
+    pchars = dic.cids2chars(cids)
+    pwords = dic.chars2words(pchars[0:-6], labels[6:])
+    print("[%s]" % '|'.join(pwords))
 
 if __name__ == '__main__':
     test_char_dict()
+

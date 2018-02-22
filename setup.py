@@ -9,7 +9,7 @@ def readme():
 		return f.read()
 
 setup(name='cutkum',
-	version='1.4.2',
+	version='2.4',
 	description='Thai Word-Segmentation with LSTM in Tensorflow',
 	long_description=readme(),
 	keywords='thai tokenizer tensorflow lstm',

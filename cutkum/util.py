@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 import sys
@@ -114,7 +114,7 @@ def get_boundary_array(words):
             length += (len(w) - (2*6 + 1))
         else:
             length += len(w)
-    
+
     x = np.zeros(length+1, dtype=np.int32)
     x[0] = 1
     
@@ -219,9 +219,11 @@ def count_correct_words(answer_boundary, output_boundary, n_answers, n_outputs):
     seq_lengths:    lengths of each example [#examples], used to feed the model
     chars_mat:      list of list of characters ... can be used for reconstruction of sentences
 '''
-def load_files_into_matrix(test_files):
+def load_files_into_matrix(test_files, num_look_ahead):
     char_dict = CharDictionary()
     input_classes = char_dict.num_char_classes() + 1
+
+    cids_padding = char_dict.padding_cids(num_look_ahead)
 
     cids_mat  = []
     chars_mat = []
@@ -234,6 +236,7 @@ def load_files_into_matrix(test_files):
                 if s and (len(s) > 0):                    
                     chars = list(s.strip())
                     cids = char_dict.chars2cids(chars)
+                    cids = cids + cids_padding
                     seq_lengths += [len(cids)]
                     cids_mat.append(cids)
                     chars_mat.append(chars)
@@ -262,9 +265,14 @@ def load_files_into_matrix(test_files):
     chars_mat:      list of list of characters ... can be used for reconstruction of sentences
     boundary_mat:   list of boundary array (each is of length #chars+1)
 '''
-def load_validation_set(test_files):
+def load_validation_set(test_files, num_look_ahead):
     char_dict = CharDictionary()
     input_classes = char_dict.num_char_classes() + 1
+
+    # another place is in best2010_reader.py
+    # num_look_ahead = 6
+    post_padding = ' ' * num_look_ahead
+    #post_padding = ''.join(char_dict.padding_cids(length=num_look_ahead))
 
     cids_mat  = []
     chars_mat = []
@@ -273,14 +281,18 @@ def load_validation_set(test_files):
     for input_file in test_files:
         with file_io.FileIO(input_file, 'r') as f:
             for s in f: # s is the line string
+
                 if (sys.version_info <= (3, 0)):
                     s = s.decode('utf8')
                 if s and (len(s) > 0):
-                    t = re.sub("<[^>]*>", "", s.strip())
+                    s = s.strip()
+                    s = s.strip() + post_padding + '|'
+                    t = re.sub("<[^>]*>", "", s)
                     t = re.sub("[|]", "", t)
 
                     # [:-1] remove the ending empty word (resulting from "|" at the end of line in BEST2010)
-                    answers = re.split('[|]', s.strip())[:-1]
+                    answers = re.split('[|]', s)[:-1]
+                    #print(answers)
                     boundary = get_boundary_array(answers)
                     boundary_mat.append(boundary)
                     
@@ -313,34 +325,56 @@ if __name__ == '__main__':
     #    'data/test_txt/encyclopedia_00099.txt', 
     #    'data/test_txt/news_00088.txt', 
     #    'data/test_txt/novel_00098.txt']
-    test_files = ['data/test_txt/article_00179.txt']
-        
+    
+    #test_files = ['data/test_txt/article_00179.txt']
+    #test_files = ['article_00179_head.txt']
+    test_files = ['data/eval/head.txt']
+
+    char_dict = CharDictionary()
+
     one_hot_by_t, seq_lengths, chars_mat, boundary_mat = load_validation_set(test_files)
+    labels = [1]*57 + [1]*5 + [2]
+    print(len(chars_mat[0]), len(labels))
+    words = char_dict.chars2words(chars_mat[0], labels)
+    print("[%s]" % words[0])
+    print('len(words[0])', len(words[0]))
+    print('len(labels)', len(labels))
     print(one_hot_by_t.shape)
-    #print(len(seq_lengths))
-    #print(len(chars_mat))
+    print(seq_lengths[0])
+    print(chars_mat[0])
+    print(boundary_mat[0])
+    print(len(boundary_mat[0]))
+    y = get_boundary_array(words[0])
+    print(len(y))
     #print(len(boundary_mat))
+
     #labels = viterbi(probs)
     #words  = char_dict.chars2words(chars, labels)
     #print('|'.join(words))
     
     answers = u"เขา|ร้อง|บท|<POEM>เย็นย่ำ จะค่ำอยู่แล้วลงรอนรอน</POEM>|".split('|')[:-1]
-    print('|'.join(answers))
+    #print('|'.join(answers))
 
     words = u"เขา|ร้อง|บท|เย็น|ย่ำ| |จะ|ค่ำ|อยู่แล้ว|ลง|รอนรอน".split('|')
-    print('|'.join(words))
+    #words = u"เขาร้องบทเย็นย่ำ จะค่ำอยู่แล้วลงรอนรอน".split('|')
+    #print('#c', len(words[0]))
+    #print('|'.join(words))
 
     x = get_boundary_array(answers)
     y = get_boundary_array(words)
-    print(x)
-    print(y)
-    print(len(answers))
-    print(len(words))
-    print('len x:', word_count_from_boundary_array(x))
-    print('len y:', word_count_from_boundary_array(y))    
+    #print(x.shape)
+    #print(y.shape)
+    #print(len(answers))
+    #print(len(words))
+    #print('len x:', word_count_from_boundary_array(x))
+    #print('len y:', word_count_from_boundary_array(y))    
     correct, n_refwords, n_outwords = count_correct_words(x, y, len(answers), len(words))
-    
+    #print(correct, n_refwords, n_outwords)
+
     r = float(correct) / float(n_refwords)
     p = float(correct) / float(n_outwords)
-    f = 2 * p * r / (p + r)
-    print("recall = %.3f, precision = %.3f, F = %.3f" % (r, p, f))
+    if (p == 0) or (r == 0):
+        f = 0
+    else: 
+        f = 2 * p * r / (p + r)
+    #print("recall = %.3f, precision = %.3f, F = %.3f" % (r, p, f))

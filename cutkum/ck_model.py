@@ -12,7 +12,7 @@ import tensorflow as tf
 import tensorflow.contrib.layers as layers
 import tensorflow.contrib.rnn as rnn
 
-from . import char_dictionary
+#from . import char_dictionary
 
 def load_settings(sess):
 
@@ -20,17 +20,20 @@ def load_settings(sess):
     model_vars = dict()
 
     graph = tf.get_default_graph()
+    #for v in sess.graph.get_operations():
+    #    print('P:', v.name)
 
-    configs = ['cell_sizes', 'num_layers', 'input_classes', 'label_classes', 'learning_rate', 'l2_regularization', 'cell_type', 'direction']
+    configs = ['cell_sizes', 'look_ahead', 'num_layers', 'input_classes', 'label_classes', 'learning_rate', 'l2_regularization', 'cell_type'] #, 'direction']
     for c in configs:
         name = 'prefix/%s:0' % c
         model_settings[c] = sess.run(graph.get_tensor_by_name(name))
 
     model_vars['inputs']  = graph.get_tensor_by_name('prefix/placeholder/inputs:0')
+    model_vars['fw_state'] = graph.get_tensor_by_name('prefix/placeholder/fw_state:0')    
     model_vars['seq_lengths'] = graph.get_tensor_by_name('prefix/placeholder/seq_lengths:0')
     model_vars['keep_prob'] = graph.get_tensor_by_name('prefix/placeholder/keep_prob:0')
 
-    model_vars['probs'] = graph.get_tensor_by_name('prefix/batch_probs:0')
+    model_vars['probs'] = graph.get_tensor_by_name('prefix/probs:0')
 
     return model_settings, model_vars
 
@@ -86,18 +89,28 @@ class CkModel:
     
     def __init__(self, model_settings):
         logging.info('...init WordSegmentor')
-                
-        self.cell_sizes = model_settings["cell_size"] # list of cell_size, same length as num_layers
-        #self.num_unroll = model_settings["num_unroll"]
+
         self.num_layers = model_settings["num_layers"]        
+      
+        self.cell_sizes  = model_settings["cell_sizes"] # list of cell_size, same length as num_layers
+        self.total_cells = sum(self.cell_sizes)
+        self.cell_start  = [sum(self.cell_sizes [:i]) for i in range(self.num_layers)]
+
+        # keep number of look_ahead (not used in the training, but so that people know how to use the model)
+        self.look_ahead = model_settings['look_ahead']
+
+        #self.num_unroll = model_settings["num_unroll"]
         self.input_classes = model_settings['input_classes']
         self.label_classes = model_settings['label_classes']
         self.learning_rate = model_settings['learning_rate']
         self.l2_regularization = model_settings['l2_regularization'] # 0.1
         self.cell_type = model_settings['cell_type']
-        self.direction = model_settings['direction']
-        
+        #self.direction = model_settings['direction']
+
+        #self.states = None
+
         tf.add_to_collection('configs', tf.constant(self.cell_sizes, name="cell_sizes"))
+        tf.add_to_collection('configs', tf.constant(self.look_ahead, name="look_ahead"))  
         #tf.add_to_collection('configs', tf.constant(self.num_unroll, name="num_unroll"))
         tf.add_to_collection('configs', tf.constant(self.num_layers, name="num_layers"))
         tf.add_to_collection('configs', tf.constant(self.input_classes, name="input_classes"))
@@ -105,7 +118,7 @@ class CkModel:
         tf.add_to_collection('configs', tf.constant(self.learning_rate, name="learning_rate"))           
         tf.add_to_collection('configs', tf.constant(self.l2_regularization, name="l2_regularization"))
         tf.add_to_collection('configs', tf.constant(self.cell_type, name="cell_type"))
-        tf.add_to_collection('configs', tf.constant(self.direction, name="direction"))
+        #tf.add_to_collection('configs', tf.constant(self.direction, name="direction"))
         
         self.global_step = tf.Variable(0, dtype=tf.int32, trainable=False, name='global_step')
         self.increment_global_step_op = tf.assign(self.global_step, self.global_step+1)
@@ -119,77 +132,83 @@ class CkModel:
             self.outputs = tf.placeholder(tf.float32, (None, None, self.label_classes), name="outputs")
             # [batch]
             self.seq_lengths = tf.placeholder(tf.int32, [None], name="seq_lengths")
-        
-            #self.fw_state = tf.placeholder(tf.float32, [self.num_layers, 2, None, self.cell_sizes], name="fw_state")
-            #self.bw_state = tf.placeholder(tf.float32, [self.num_layers, 2, None, self.cell_sizes], name="bw_state")
+
+            # LSTM - [2, None, sum(cell_sizes)]
+            # GRU, RNN - [1, None, sum(cell_sizes)]
+            if (self.cell_type == 'lstm'):
+                self.fw_state = tf.placeholder(tf.float32, [2, None, self.total_cells], name="fw_state")
+            else: # gru, rnn
+                self.fw_state = tf.placeholder(tf.float32, [1, None, self.total_cells], name="fw_state")
+
             self.keep_prob = tf.placeholder(tf.float32, name="keep_prob")
             
             tf.add_to_collection('placeholders', self.inputs)
             tf.add_to_collection('placeholders', self.outputs)
-            tf.add_to_collection('placeholders', self.seq_lengths)        
-            #tf.add_to_collection('placeholders', self.fw_state)
-            #tf.add_to_collection('placeholders', self.bw_state)
+            tf.add_to_collection('placeholders', self.seq_lengths)
             tf.add_to_collection('placeholders', self.keep_prob)         
     
+    # 
+    def init_fw_states(self, batch_size):
+        if (self.cell_type == 'lstm'):
+            return np.zeros(shape=[2, batch_size, self.total_cells])
+        else: # GRU, RNN
+            return np.zeros(shape=[1, batch_size, self.total_cells])
+
+    # state tuple to tensor
+    def flatten_fw_states(self, fw_state_tuple):
+        if (self.cell_type == 'lstm'):
+            # fw_state_tuple is tuple of LSTMStateTuple of lenghts 'num_layers'
+            # states = [2, batch_size, self.total_cells]
+            c_tensor = np.concatenate([fw_state_tuple[i].c for i in range(self.num_layers)], axis=1)
+            h_tensor = np.concatenate([fw_state_tuple[i].h for i in range(self.num_layers)], axis=1)
+            state = np.stack([c_tensor, h_tensor])
+        else: # GRU, RNN
+            # fw_state_tuple is tuple of ndarray of lenghts 'num_layers'
+            c_tensor = np.concatenate([fw_state_tuple[i] for i in range(self.num_layers)], axis=1)
+            state = np.expand_dims(c_tensor, axis=0)
+        return state #.eval()
+
+    # state tensor to tuple
+    def unstack_fw_states(self, fw_state):
+        if (self.cell_type == 'lstm'):
+            # states = [2, batch_size, self.total_cells]
+            fw_state_tuple = tuple(
+                [tf.contrib.rnn.LSTMStateTuple(
+                    fw_state[0, :, self.cell_start[i]:self.cell_start[i]+self.cell_sizes[i]], 
+                    fw_state[1, :, self.cell_start[i]:self.cell_start[i]+self.cell_sizes[i]]) 
+                for i in range(self.num_layers)])
+        else: # GRU, RNN
+            # states = [1, batch_size, self.total_cells]
+            fw_state_tuple = tuple(
+                [fw_state[0, :, self.cell_start[i]:self.cell_start[i]+self.cell_sizes[i]] 
+                    for i in range(self.num_layers)])
+        return fw_state_tuple
+
     def _inference(self):
         logging.info('...create inference')
-        
-        #fw_state_list = tf.unstack(self.fw_state, axis=0)
-        #fw_state_tuple = tuple(
-        #    [tf.contrib.rnn.LSTMStateTuple(fw_state_list[idx][0], fw_state_list[idx][1])
-        #     for idx in range(self.num_layers)])
 
-        #bw_state_list = tf.unstack(self.bw_state, axis=0)
-        #bw_state_tuple = tuple(
-        #    [tf.contrib.rnn.LSTMStateTuple(bw_state_list[idx][0], bw_state_list[idx][1])
-        #     for idx in range(self.num_layers)])
-             
-        fw_cells = list()
+        fw_state_tuple = self.unstack_fw_states(self.fw_state)
+
+        fw_cells   = list()
         for i in range(0, self.num_layers):
             if (self.cell_type == 'lstm'):
-                cell = rnn.LSTMCell(num_units=self.cell_sizes[i], state_is_tuple=True)                
+                cell = rnn.LSTMCell(num_units=self.cell_sizes[i], state_is_tuple=True)
             elif (self.cell_type == 'gru'):
                 # change to GRU
-                cell = rnn.LSTMCell(num_units=self.cell_sizes[i], state_is_tuple=True)
+                cell = rnn.GRUCell(num_units=self.cell_sizes[i])
             else:
                 cell = rnn.BasicRNNCell(num_units=self.cell_sizes[i])
+
             cell = rnn.DropoutWrapper(cell, output_keep_prob=self.keep_prob)
-            fw_cells.append(cell)        
+            fw_cells.append(cell)
         self.fw_cells = rnn.MultiRNNCell(fw_cells, state_is_tuple=True)
-        
-        if (self.direction == 2): # bidirectional
-            print('bidirectional')
-            bw_cells = list()
-            for i in range(0, self.num_layers):
-                if (self.cell_type == 'lstm'):
-                    cell = rnn.LSTMCell(num_units=self.cell_sizes[i], state_is_tuple=True)
-                elif (self.cell_type == 'gru'):
-                    # change to GRU
-                    cell = rnn.LSTMCell(num_units=self.cell_sizes[i], state_is_tuple=True)
-                else:
-                    cell = rnn.BasicRNNCell(num_units=self.cell_sizes[i])
-                cell = rnn.DropoutWrapper(cell, output_keep_prob=self.keep_prob)
-                bw_cells.append(cell)        
-            self.bw_cells = rnn.MultiRNNCell(bw_cells, state_is_tuple=True)
-        
-        if (self.direction == 1):
-            rnn_outputs, states = tf.nn.dynamic_rnn(
-                self.fw_cells, 
-                self.inputs, 
-                #initial_state=fw_state_tuple,
-                sequence_length=self.seq_lengths,
-                dtype=tf.float32, time_major=True)
-        else: # self.direction = 2        
-            # bidirectional rnn
-            outputs, states  = tf.nn.bidirectional_dynamic_rnn(
-                cell_fw=self.fw_cells,
-                cell_bw=self.bw_cells,
-                #initial_state_fw=fw_state_tuple,
-                #initial_state_bw=bw_state_tuple,
-                dtype=tf.float32,
-                sequence_length=self.seq_lengths, 
-                inputs=self.inputs, time_major=True)
-            rnn_outputs = tf.concat(outputs, axis=2)
+
+        rnn_outputs, states = tf.nn.dynamic_rnn(
+            self.fw_cells, 
+            self.inputs, 
+            initial_state=fw_state_tuple,
+            sequence_length=self.seq_lengths,
+            dtype=tf.float32, time_major=True)
 
         # project output from rnn output size to OUTPUT_SIZE. Sometimes it is worth adding
         # an extra layer here.
@@ -210,8 +229,9 @@ class CkModel:
             logits_flat  = tf.reshape(self.logits,  [-1, self.label_classes])
 
             # calculate the losses shape=[Time * Batch]
-            losses = tf.nn.softmax_cross_entropy_with_logits(
-                labels=outputs_flat, logits=logits_flat)
+            # pre-tensorflow 1.5
+            #losses = tf.nn.softmax_cross_entropy_with_logits_v2(labels=outputs_flat, logits=logits_flat)            
+            losses = tf.nn.softmax_cross_entropy_with_logits(labels=outputs_flat, logits=logits_flat)
             
              # create mask [Time * Batch] where 0: padded, 1: not-padded
             mask = outputs_flat[:,0]

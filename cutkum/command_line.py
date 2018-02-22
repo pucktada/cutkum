@@ -8,7 +8,7 @@ from .tokenizer import Cutkum
 def main():
 	p = argparse.ArgumentParser()
 	p.add_argument('-v', '--verbose', help='verbose', action='store_true')
-	p.add_argument('-m', '--model_file', required=True, help='model file to load')
+	#p.add_argument('-m', '--model_file', required=True, help='model file to load')
 	g1 = p.add_mutually_exclusive_group(required=True)
 	g1.add_argument('-s', '--sentence', help='sentence to parse')
 	g1.add_argument('-i', '--input_file', help='input file')
@@ -19,8 +19,8 @@ def main():
 	g2.add_argument('-od', '--output_dir', help='output directory if --input_dir is given')
 
 	g3 = p.add_mutually_exclusive_group(required=False)
-	g3.add_argument('--max', action='store_const', dest='max_flag', const='max', help='output word boundary using maximum probabilities (default)')
-	g3.add_argument('--viterbi', action='store_const', dest='max_flag', const='vit', help='output word boundary using viterbi')
+	g3.add_argument('--viterbi', action='store_const', dest='max_flag', const='vit', help='output word boundary using viterbi (default)')	
+	g3.add_argument('--max', action='store_const', dest='max_flag', const='max', help='output word boundary using maximum probabilities')
 	p.set_defaults(max_flag='max')
 
 	opts = vars(p.parse_known_args()[0])
@@ -33,7 +33,7 @@ def main():
 	logging.basicConfig(format='%(levelname)s:%(message)s', level=log_level)
 
 	# OTHERS ARGS
-	model_file		= opts['model_file']
+	#model_file		= opts['model_file']
 	input_sentence  = opts['sentence']  
 	input_file      = opts['input_file']
 	output_file     = opts['output_file']
@@ -45,11 +45,12 @@ def main():
 		p.error('--input_file and --output_file must be given together')
 	if (input_dir is not None) & (output_dir is None):
 		p.error('--input_dir and --output_dir must be given together')				
-	use_viterbi = False
-	if (max_flag == 'viterbi'):
-		use_viterbi = True
+	use_viterbi = True
+	if (max_flag == 'max'):
+		use_viterbi = False
 
-	ck = Cutkum(model_file)
+	ck = Cutkum()
+	#ck = Cutkum(model_file)
 	if input_file is not None:
 		ck.tokenize_file(input_file, output_file, use_viterbi)
 	elif (input_dir is not None) & (output_dir is not None):
