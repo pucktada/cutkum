@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 import sys
 from tensorflow.python.lib.io import file_io
 #from .char_dictionary import char_dictionary
-from .char_dictionary import CharDictionary
+from char_dictionary import CharDictionary
 import numpy as np
 import re
 
