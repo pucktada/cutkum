@@ -131,7 +131,10 @@ def get_boundary_array(words):
             x[cur] = 1
 
     return x
-    
+
+def count_correct_chars(answer_boundary, output_boundary):
+    return None
+
 '''
     NE, AB and POEM
 

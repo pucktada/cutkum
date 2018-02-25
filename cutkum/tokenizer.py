@@ -223,6 +223,8 @@ class Cutkum:
 					x = boundary_mat[i]
 					y = get_boundary_array(words)
 
+					
+
 					n_answers = word_count_from_boundary_array(x)
 					n_words   = len(words)
 					correct, n_refwords, n_outwords = count_correct_words(x, y, n_answers, n_words)
@@ -242,7 +244,7 @@ class Cutkum:
 				else:
 					f = 2 * p * r / (p + r)
 
-				print('[%s] R: %.2f, P: %.2f, F: %.2f' % (test_file, r, p, f))
+				print('[%s] R: %.3f, P: %.3f, F: %.3f' % (test_file, r, p, f))
 			
 			all_r = (float)(all_correct / all_n_refwords)
 			all_p = (float)(all_correct / all_n_outwords)
@@ -250,4 +252,4 @@ class Cutkum:
 				all_f = 0
 			else:
 				all_f = 2 * all_p * all_r / (all_p + all_r)
-			print('[%s] R: %.2f, P: %.2f, F: %.2f' % ('TOTAL', all_r, all_p, all_f))
+			print('[%s] R: %.3f, P: %.3f, F: %.3f' % ('TOTAL', all_r, all_p, all_f))
