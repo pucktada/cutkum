@@ -74,7 +74,7 @@ cutkum -id input_dir -od output_dir
 ## Citation
 
 ```
-Puck Treeratpituk (2017). Cutkum: Thai Word-Segmentation with LSTM in Tensorflow. May 5, 2017. See https://github.com/pucktada/cutkum
+Pucktada Treeratpituk (2017). Cutkum: Thai Word-Segmentation with LSTM in Tensorflow. May 5, 2017. See https://github.com/pucktada/cutkum
 ```
 
 ## License
