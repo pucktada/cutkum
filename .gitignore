@@ -8,7 +8,6 @@ __pycache__/
 
 # Distribution / packaging
 .Python
-cutkum/train.py
 cutkum/freeze_graph.py
 env/
 build/

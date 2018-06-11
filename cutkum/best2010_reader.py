@@ -144,7 +144,8 @@ if __name__ == '__main__':
     #            'data/5M.BEST2010/news', 
     #            'data/5M.BEST2010/novel']
     
-    convert_data_to_tfrecord(['data/test_txt'], 'data/all_s2_c4', num_look_ahead=2)
+    #convert_data_to_tfrecord(['data/test_txt'], 'data/all_s2_c4', num_look_ahead=2)
+    convert_data_to_tfrecord(['data/train_txt'], 'data/train_s3_c4', num_look_ahead=3)
 
     #dirname = 'data'
     #files = [join(dirname, f) for f in listdir(dirname) if isfile(join(dirname, f))]

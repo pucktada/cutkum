@@ -133,7 +133,19 @@ def get_boundary_array(words):
     return x
 
 def count_correct_chars(answer_boundary, output_boundary):
-    return None
+
+    correct = n_refwords = n_outwords = 0
+    for i in range(len(answer_boundary)):
+        if (answer_boundary[i] != 0):
+            n_refwords += 1
+
+        if (output_boundary[i] != 0):
+            n_outwords += 1
+
+        if (answer_boundary[i] != 0) and (output_boundary[i] != 0):
+            correct += 1
+
+    return (correct, n_refwords, n_outwords)
 
 '''
     NE, AB and POEM
