@@ -9,8 +9,8 @@ import logging
 import re
 import numpy as np
 import tensorflow as tf
-import tensorflow.contrib.layers as layers
-import tensorflow.contrib.rnn as rnn
+import tensorflow_addons.layers as layers
+import tensorflow_addons.rnn as rnn
 
 #from . import char_dictionary
 
@@ -19,7 +19,7 @@ def load_settings(sess):
     model_settings = dict()        
     model_vars = dict()
 
-    graph = tf.get_default_graph()
+    graph = tf.compat.v1.get_default_graph()
     #for v in sess.graph.get_operations():
     #    print('P:', v.name)
 
@@ -44,8 +44,8 @@ def load_graph(model_file):
 
     # We load the protobuf file from the disk and parse it to retrieve the 
     # unserialized graph_def
-    with tf.gfile.GFile(model_file, "rb") as f:
-        graph_def = tf.GraphDef()
+    with tf.compat.v2.io.gfile.GFile(model_file, "rb") as f:
+        graph_def = tf.compat.v1.GraphDef()
         graph_def.ParseFromString(f.read())
 
     # Then, we can use again a convenient built-in function to import a graph_def into the 

@@ -14,10 +14,10 @@ import math
 import numpy as np
 import re
 import sys
-import tensorflow as tf
-from char_dictionary import CharDictionary
-from ck_model import CkModel, load_graph, load_settings
-from util import max_prob, viterbi, load_files_into_matrix, load_validation_set, get_boundary_array, count_correct_chars, count_correct_words, word_count_from_boundary_array
+import tensorflow.compat.v1 as tf
+from .char_dictionary import CharDictionary
+from .ck_model import CkModel, load_graph, load_settings
+from .util import max_prob, viterbi, load_files_into_matrix, load_validation_set, get_boundary_array, count_correct_words, word_count_from_boundary_array
 
 class Cutkum:
 	""" cutkum model: LSTM recurrent neural network model """
@@ -183,8 +183,9 @@ class Cutkum:
 		test_files = listdir(eval_dir)
 		with tf.Session(graph=self.graph) as sess:
 
-			all_correct = all_n_refwords = all_n_outwords = 0
-			all_correct_c = all_n_refwords_c = all_n_outwords_c = 0
+			all_correct    = 0
+			all_n_refwords = 0
+			all_n_outwords = 0
 
 			# one file at a time
 			for test_file in test_files:
@@ -204,9 +205,9 @@ class Cutkum:
 
 				probs  = sess.run(self.model_vars['probs'], feed_dict=feed)
 
-				total_c  = total_r  = total_o  = 0.0
-				total_cc = total_rc = total_oc = 0.0
-
+				total_c = 0.0
+				total_r = 0.0
+				total_o = 0.0
 				_, n_examples, _ = probs.shape
 
 				for i in range(n_examples):
@@ -226,23 +227,13 @@ class Cutkum:
 					n_words   = len(words)
 					correct, n_refwords, n_outwords = count_correct_words(x, y, n_answers, n_words)
 
-					correct_c, n_refwords_c, n_outwords_c = count_correct_chars(x, y)
-
 					total_c += correct
 					total_r += n_refwords
 					total_o += n_outwords
 
-					total_cc += correct_c
-					total_rc += n_refwords_c
-					total_oc += n_outwords_c
-
 				all_correct += total_c
 				all_n_refwords += total_r
 				all_n_outwords += total_o
-
-				all_correct_c += total_cc
-				all_n_refwords_c += total_rc
-				all_n_outwords_c += total_oc			
 
 				r = (float)(total_c / total_r)
 				p = (float)(total_c / total_o)
@@ -251,15 +242,7 @@ class Cutkum:
 				else:
 					f = 2 * p * r / (p + r)
 
-				rc = (float)(total_cc / total_rc)
-				pc = (float)(total_cc / total_oc)
-				if (rc == 0) or (pc == 0):
-					fc = 0
-				else:
-					fc = 2 * pc * rc / (pc + rc)
-
-				print('[%s]  R: %.3f,  P: %.3f,  F: %.3f' % (test_file, r, p, f))
-				print('[%s] RC: %.3f, PC: %.3f, FC: %.3f' % (test_file, rc, pc, fc))
+				print('[%s] R: %.2f, P: %.2f, F: %.2f' % (test_file, r, p, f))
 			
 			all_r = (float)(all_correct / all_n_refwords)
 			all_p = (float)(all_correct / all_n_outwords)
@@ -267,15 +250,4 @@ class Cutkum:
 				all_f = 0
 			else:
 				all_f = 2 * all_p * all_r / (all_p + all_r)
-
-			all_rc = (float)(all_correct_c / all_n_refwords_c)
-			all_pc = (float)(all_correct_c / all_n_outwords_c)
-			if (all_rc == 0) or (all_pc == 0):
-				all_fc = 0
-			else:
-				all_fc = 2 * all_pc * all_rc / (all_pc + all_rc)
-
-			print('[%s]  R: %.3f,  P: %.3f,  F: %.3f' % ('TOTAL', all_r, all_p, all_f))
-			print('[%s] RC: %.3f, PC: %.3f, FC: %.3f' % ('TOTAL', all_rc, all_pc, all_fc))
-
-
+			print('[%s] R: %.2f, P: %.2f, F: %.2f' % ('TOTAL', all_r, all_p, all_f))
